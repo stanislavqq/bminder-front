@@ -30,6 +30,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/birthdays/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid birthday ID" });
+      }
+      
+      const validatedData = insertBirthdaySchema.parse(req.body);
+      const birthday = await storage.updateBirthday(id, validatedData);
+      res.json(birthday);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid birthday data", errors: error.errors });
+      } else if (error instanceof Error && error.message.includes("not found")) {
+        res.status(404).json({ message: "Birthday not found" });
+      } else {
+        res.status(500).json({ message: "Failed to update birthday" });
+      }
+    }
+  });
+
   app.delete("/api/birthdays/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

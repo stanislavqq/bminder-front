@@ -8,6 +8,7 @@ export const birthdays = pgTable("birthdays", {
   lastName: text("last_name").notNull(),
   birthDate: text("birth_date").notNull(), // Format: YYYY-MM-DD or --MM-DD for no year
   hasYear: boolean("has_year").notNull().default(true),
+  comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,6 +30,7 @@ export default function BirthdayForm() {
       lastName: "",
       birthDate: "",
       hasYear: true,
+      comment: "",
     },
   });
 
@@ -130,7 +132,25 @@ export default function BirthdayForm() {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <FormField
+              control={form.control}
+              name="comment"
+              render={({ field }) => (
+                <FormItem className="md:col-span-3">
+                  <FormLabel>Комментарий</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Дополнительная информация о человеке..."
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex items-center space-x-2 md:col-span-3">
               <Checkbox
                 id="skipYear"
                 checked={skipYear}

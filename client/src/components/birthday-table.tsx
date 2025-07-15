@@ -1,13 +1,19 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, List } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Trash2, List, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { calculateAge, calculateDaysUntilBirthday, formatBirthDate } from "@/lib/date-utils";
-import type { Birthday } from "@shared/schema";
+import { insertBirthdaySchema, type Birthday, type InsertBirthday } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,9 +29,22 @@ import {
 export default function BirthdayTable() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [skipYear, setSkipYear] = useState(false);
 
   const { data: birthdays, isLoading } = useQuery<Birthday[]>({
     queryKey: ['/api/birthdays'],
+  });
+
+  const form = useForm<InsertBirthday>({
+    resolver: zodResolver(insertBirthdaySchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      birthDate: "",
+      hasYear: true,
+      comment: "",
+    },
   });
 
   const deleteMutation = useMutation({
@@ -49,8 +68,60 @@ export default function BirthdayTable() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: InsertBirthday }) => {
+      return await apiRequest("PUT", `/api/birthdays/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/birthdays'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/birthdays/stats'] });
+      setEditingId(null);
+      setSkipYear(false);
+      toast({
+        title: "Успешно!",
+        description: "Запись обновлена.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить запись.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDelete = (id: number) => {
     deleteMutation.mutate(id);
+  };
+
+  const handleEdit = (birthday: Birthday) => {
+    setEditingId(birthday.id);
+    setSkipYear(!birthday.hasYear);
+    form.reset({
+      firstName: birthday.firstName,
+      lastName: birthday.lastName,
+      birthDate: birthday.birthDate,
+      hasYear: birthday.hasYear,
+      comment: birthday.comment || "",
+    });
+  };
+
+  const handleSave = (data: InsertBirthday) => {
+    if (editingId) {
+      const formattedData = {
+        ...data,
+        hasYear: !skipYear,
+        birthDate: skipYear ? `--${data.birthDate.slice(5)}` : data.birthDate,
+      };
+      updateMutation.mutate({ id: editingId, data: formattedData });
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setSkipYear(false);
+    form.reset();
   };
 
   const getDaysUntilBadgeColor = (days: number) => {
@@ -132,6 +203,9 @@ export default function BirthdayTable() {
                   До дня рождения
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Комментарий
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Действия
                 </th>
               </tr>
@@ -140,17 +214,60 @@ export default function BirthdayTable() {
               {birthdays.map((birthday) => {
                 const age = calculateAge(birthday.birthDate, birthday.hasYear);
                 const daysUntil = calculateDaysUntilBirthday(birthday.birthDate, birthday.hasYear);
+                const isEditing = editingId === birthday.id;
                 
                 return (
                   <tr key={birthday.id} className="hover:bg-slate-50 transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {birthday.firstName}
+                      {isEditing ? (
+                        <Input
+                          {...form.register("firstName")}
+                          placeholder="Имя"
+                          className="w-full"
+                        />
+                      ) : (
+                        birthday.firstName
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {birthday.lastName}
+                      {isEditing ? (
+                        <Input
+                          {...form.register("lastName")}
+                          placeholder="Фамилия"
+                          className="w-full"
+                        />
+                      ) : (
+                        birthday.lastName
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {formatBirthDate(birthday.birthDate, birthday.hasYear)}
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <Input
+                            {...form.register("birthDate")}
+                            type="date"
+                            className="w-full"
+                          />
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`skipYear-${birthday.id}`}
+                              checked={skipYear}
+                              onCheckedChange={(checked) => {
+                                setSkipYear(checked as boolean);
+                                form.setValue("hasYear", !checked);
+                              }}
+                            />
+                            <label
+                              htmlFor={`skipYear-${birthday.id}`}
+                              className="text-xs text-slate-500"
+                            >
+                              Без года
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        formatBirthDate(birthday.birthDate, birthday.hasYear)
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                       {age || "—"}
@@ -160,37 +277,84 @@ export default function BirthdayTable() {
                         {daysUntil === 0 ? "Сегодня!" : `${daysUntil} ${daysUntil === 1 ? "день" : daysUntil < 5 ? "дня" : "дней"}`}
                       </Badge>
                     </td>
+                    <td className="px-6 py-4 text-sm text-slate-500">
+                      {isEditing ? (
+                        <Textarea
+                          {...form.register("comment")}
+                          placeholder="Комментарий..."
+                          className="w-full min-h-[60px]"
+                        />
+                      ) : (
+                        <div className="max-w-xs truncate" title={birthday.comment || ""}>
+                          {birthday.comment || "—"}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-900 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Подтверждение удаления</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Вы уверены, что хотите удалить запись о дне рождения{" "}
-                              <strong>{birthday.firstName} {birthday.lastName}</strong>?
-                              Это действие нельзя отменить.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Отмена</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(birthday.id)}
-                              className="bg-red-600 hover:bg-red-700"
+                      <div className="flex items-center space-x-2">
+                        {isEditing ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={form.handleSubmit(handleSave)}
+                              disabled={updateMutation.isPending}
+                              className="text-green-600 hover:text-green-900 hover:bg-green-50"
                             >
-                              Удалить
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCancel}
+                              className="text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(birthday)}
+                              className="text-blue-600 hover:text-blue-900 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Подтверждение удаления</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Вы уверены, что хотите удалить запись о дне рождения{" "}
+                                    <strong>{birthday.firstName} {birthday.lastName}</strong>?
+                                    Это действие нельзя отменить.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(birthday.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Удалить
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

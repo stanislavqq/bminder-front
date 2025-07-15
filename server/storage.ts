@@ -16,6 +16,7 @@ export interface IStorage {
   getBirthdays(): Promise<Birthday[]>;
   getBirthday(id: number): Promise<Birthday | undefined>;
   createBirthday(birthday: InsertBirthday): Promise<Birthday>;
+  updateBirthday(id: number, birthday: InsertBirthday): Promise<Birthday>;
   deleteBirthday(id: number): Promise<void>;
   getBirthdayStats(): Promise<BirthdayStats>;
   
@@ -83,6 +84,21 @@ export class MemStorage implements IStorage {
     };
     this.birthdays.set(id, birthday);
     return birthday;
+  }
+
+  async updateBirthday(id: number, insertBirthday: InsertBirthday): Promise<Birthday> {
+    const existingBirthday = this.birthdays.get(id);
+    if (!existingBirthday) {
+      throw new Error(`Birthday with id ${id} not found`);
+    }
+    
+    const updatedBirthday: Birthday = {
+      ...existingBirthday,
+      ...insertBirthday,
+      id,
+    };
+    this.birthdays.set(id, updatedBirthday);
+    return updatedBirthday;
   }
 
   async deleteBirthday(id: number): Promise<void> {

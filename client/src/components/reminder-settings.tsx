@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,9 +34,11 @@ export default function ReminderSettings() {
   });
 
   // Reset form when settings are loaded
-  if (settings && !form.formState.isDirty) {
-    form.reset(settings);
-  }
+  useEffect(() => {
+    if (settings && !form.formState.isDirty) {
+      form.reset(settings);
+    }
+  }, [settings, form]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: InsertReminderSettings) => {
