@@ -1,189 +1,173 @@
-# Система управления днями рождения
+# Birthday Management System
 
-Веб-приложение для управления записями дней рождений с интерактивными вкладками и статистикой на React и Express.
+Веб-приложение для управления записями дней рождений с интерактивными вкладками и статистикой на React.
 
-## Возможности
+## Быстрый старт
 
-- ✅ Добавление и редактирование записей о днях рождения
-- ✅ Поддержка записей с годом и без года
-- ✅ Комментарии к записям
-- ✅ Встроенное редактирование в таблице
-- ✅ Статистика по записям
-- ✅ Настройки напоминаний
-- ✅ Конфигурация уведомлений (Telegram, Email, VK)
-- ✅ Интерактивные вкладки
-- ✅ Адаптивный дизайн
+### Требования
+- Node.js 18+
+- Совместимый внешний API backend (см. требования к API ниже)
 
-## Технический стек
+### Установка и настройка
 
-- **Frontend**: React 18, TypeScript, Vite
-- **Backend**: Express.js, Node.js
-- **UI**: shadcn/ui, Tailwind CSS
-- **State Management**: TanStack Query
-- **Validation**: Zod
-- **Database**: PostgreSQL (с поддержкой in-memory для разработки)
-- **ORM**: Drizzle ORM
+1. **Установите зависимости**
+   ```bash
+   npm install
+   ```
 
-## Установка и запуск
+2. **Настройте переменные окружения**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Отредактируйте `.env` с настройками вашего API:
+   ```
+   VITE_API_BASE_URL=http://your-api-server.com
+   VITE_API_KEY=your-api-key-here
+   VITE_API_TIMEOUT=30000
+   ```
 
-### Предварительные требования
+3. **Запустите сервер разработки**
+   ```bash
+   npm run dev
+   ```
+   
+   Приложение будет доступно по адресу `http://localhost:5000`
 
-- Node.js 18+ или 20+
-- npm или yarn
-- PostgreSQL (опционально, для production)
-
-### 1. Клонирование репозитория
-
-```bash
-git clone https://github.com/your-username/birthday-management-system.git
-cd birthday-management-system
-```
-
-### 2. Установка зависимостей
-
-```bash
-npm install
-```
-
-### 3. Настройка окружения
-
-Создайте файл `.env` в корне проекта:
-
-```env
-# Для разработки с in-memory хранилищем
-NODE_ENV=development
-
-# Для production с PostgreSQL (опционально)
-# DATABASE_URL=postgresql://username:password@localhost:5432/birthday_db
-```
-
-### 4. Запуск в режиме разработки
-
-```bash
-npm run dev
-```
-
-Приложение будет доступно по адресу: `http://localhost:5000`
-
-### 5. Сборка для production
+### Продакшн сборка
 
 ```bash
 npm run build
+npm run preview
 ```
 
-### 6. Запуск production версии
+## Требования к API
 
-```bash
-npm start
-```
+### Обязательные endpoints
 
-## Структура проекта
+Ваш внешний API должен реализовать следующие endpoints:
 
-```
-├── client/          # React frontend
-│   ├── src/
-│   │   ├── components/  # UI компоненты
-│   │   ├── pages/       # Страницы
-│   │   ├── lib/         # Утилиты
-│   │   └── hooks/       # Custom hooks
-├── server/          # Express backend
-│   ├── index.ts     # Точка входа
-│   ├── routes.ts    # API маршруты
-│   ├── storage.ts   # Слой данных
-│   └── vite.ts      # Vite интеграция
-├── shared/          # Общие типы и схемы
-└── dist/           # Собранная версия
-```
-
-## API Endpoints
-
-- `GET /api/birthdays` - Получить все записи
-- `POST /api/birthdays` - Создать запись
-- `PUT /api/birthdays/:id` - Обновить запись
+#### Управление днями рождения
+- `GET /api/birthdays` - Получить все записи о днях рождения
+- `POST /api/birthdays` - Создать новую запись
+- `PUT /api/birthdays/:id` - Обновить существующую запись
 - `DELETE /api/birthdays/:id` - Удалить запись
-- `GET /api/birthdays/stats` - Статистика
-- `GET/PUT /api/reminder-settings` - Настройки напоминаний
-- `GET/PUT /api/notification-settings` - Настройки уведомлений
+- `GET /api/birthdays/stats` - Получить статистику
 
-## Настройка базы данных (PostgreSQL)
+#### Управление настройками
+- `GET /api/reminder-settings` - Получить настройки напоминаний
+- `PUT /api/reminder-settings` - Обновить настройки напоминаний
+- `GET /api/notification-settings` - Получить настройки уведомлений
+- `PUT /api/notification-settings` - Обновить настройки уведомлений
 
-### Для production
+#### Проверка здоровья (опционально)
+- `GET /health` - Проверка состояния API
 
-1. Создайте базу данных:
-```sql
-CREATE DATABASE birthday_db;
+### Формат ответов API
+
+Все endpoints должны возвращать JSON ответы:
+
+**Успешный ответ:**
+```json
+{
+  "data": { /* данные ответа */ },
+  "success": true,
+  "message": "Опциональное сообщение"
+}
 ```
 
-2. Настройте переменную окружения:
-```env
-DATABASE_URL=postgresql://username:password@localhost:5432/birthday_db
+**Ошибка:**
+```json
+{
+  "message": "Описание ошибки",
+  "errors": [ /* ошибки валидации */ ]
+}
 ```
 
-3. Запустите миграции:
-```bash
-npm run db:push
+### Модели данных
+
+#### Запись о дне рождения
+```typescript
+interface Birthday {
+  id: number;
+  firstName: string;
+  lastName: string;
+  birthDate: string;      // Формат: YYYY-MM-DD или --MM-DD
+  hasYear: boolean;
+  comment?: string;
+  createdAt?: string;
+}
 ```
 
-### Для разработки
-
-По умолчанию используется in-memory хранилище, которое не требует настройки базы данных.
-
-## Доступные команды
-
-```bash
-# Разработка
-npm run dev          # Запуск в режиме разработки
-
-# Сборка
-npm run build        # Сборка для production
-
-# Production
-npm start           # Запуск production версии
-
-# База данных
-npm run db:push     # Применить схему к БД
-npm run db:studio   # Открыть Drizzle Studio
+#### Статистика
+```typescript
+interface BirthdayStats {
+  totalRecords: number;
+  upcomingBirthdays: number;
+  recordsWithoutYear: number;
+  thisMonthBirthdays: number;
+}
 ```
 
-## Особенности разработки
+## Аутентификация
 
-- **Hot Reload**: Автоматическое обновление при изменении кода
-- **Type Safety**: Полная типизация на TypeScript
-- **Валидация**: Zod схемы для валидации данных
-- **In-Memory Storage**: Быстрая разработка без настройки БД
-- **Modern UI**: Компоненты shadcn/ui с Tailwind CSS
+Если ваш API требует аутентификации, установите переменную `VITE_API_KEY`. Frontend автоматически включит её как Bearer token во все запросы.
+
+## CORS
+
+Убедитесь, что ваш API backend настроен на принятие запросов с вашего frontend домена. Для разработки разрешите запросы с `http://localhost:5000`.
+
+## Развертывание
+
+### Статический хостинг
+
+После сборки приложения разверните содержимое папки `dist` на любом сервисе статического хостинга:
+
+- **Vercel**: Подключите репозиторий и разверните автоматически
+- **Netlify**: Перетащите папку `dist` или подключите через Git
+- **GitHub Pages**: Загрузите папку `dist` в ваш репозиторий
+- **AWS S3**: Загрузите папку `dist` в S3 bucket с статическим хостингом
+
+### Переменные окружения в продакшене
+
+Установите переменные окружения на вашей хостинг-платформе:
+- `VITE_API_BASE_URL`: URL вашего продакшн API
+- `VITE_API_KEY`: Ваш продакшн API ключ (если требуется)
 
 ## Устранение неполадок
 
-### Порт уже используется
-```bash
-# Найти процесс на порту 5000
-lsof -ti:5000
+### Частые проблемы
 
-# Завершить процесс
-kill -9 <PID>
-```
+1. **Ошибка подключения к API**
+   - Проверьте, что `VITE_API_BASE_URL` правильно установлен
+   - Убедитесь, что API сервер запущен и доступен
+   - Проверьте CORS настройки на API сервере
 
-### Проблемы с зависимостями
-```bash
-# Очистить кеш и переустановить
-rm -rf node_modules package-lock.json
-npm install
-```
+2. **Ошибки аутентификации**
+   - Проверьте, что `VITE_API_KEY` правильно установлен
+   - Убедитесь, что API ключ валиден и имеет необходимые разрешения
 
-### Ошибки TypeScript
-```bash
-# Проверить типы
-npx tsc --noEmit
-```
+3. **Ошибки сборки**
+   - Убедитесь, что все переменные окружения правильно установлены
+   - Очистите node_modules и переустановите зависимости: `rm -rf node_modules && npm install`
 
-## Вклад в проект
+### Советы по разработке
 
-1. Создайте форк репозитория
-2. Создайте ветку для новой функции
-3. Внесите изменения
-4. Создайте Pull Request
+- Используйте инструменты разработчика браузера для инспекции сетевых запросов
+- Проверьте индикатор статуса API в заголовке приложения
+- Отслеживайте консоль на предмет сообщений об ошибках
+- Тестируйте API endpoints напрямую с помощью Postman или curl
+
+## Технологии
+
+- **React 18** с TypeScript
+- **Vite** для сборки и разработки
+- **Tailwind CSS** для стилизации
+- **shadcn/ui** для UI компонентов
+- **TanStack Query** для управления состоянием сервера
+- **React Hook Form** для работы с формами
+- **Zod** для валидации данных
 
 ## Лицензия
 
-MIT License
+MIT

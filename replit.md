@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a frontend-only birthday management application built with React and TypeScript. The system allows users to manage birthday records, configure reminder settings, and set up notification services through an external API. It features a modern UI built with shadcn/ui components and Tailwind CSS, with full integration for external REST API backends.
+This is a frontend-only birthday management application built with React and TypeScript. The system provides a complete user interface for managing birthday records, configuring reminder settings, and setting up notification services. The application is designed to work with any compatible external REST API backend, making it flexible and easily deployable in different environments.
 
 ## User Preferences
 
@@ -18,10 +18,19 @@ Preferred communication style: Simple, everyday language.
 
 ### Project Structure
 ```
-├── client/          # React frontend application
-├── shared/          # Shared schemas and types
-├── .env             # Environment variables for API configuration
-└── dist/           # Build output
+├── client/                    # React frontend application
+│   ├── src/
+│   │   ├── components/        # UI components
+│   │   ├── pages/            # Application pages
+│   │   ├── lib/              # Utilities and API client
+│   │   └── hooks/            # Custom React hooks
+│   ├── vite.config.ts        # Vite configuration
+│   ├── tailwind.config.ts    # Tailwind CSS configuration
+│   └── tsconfig.json         # TypeScript configuration
+├── shared/                   # Shared schemas and types
+├── .env                      # Environment variables for API configuration
+├── .env.example             # Example environment configuration
+└── dist/                    # Build output
 ```
 
 ## Key Components
@@ -136,9 +145,210 @@ The frontend expects these API endpoints:
 - Added support for configurable API base URLs and authentication
 - Maintained all existing UI components and functionality
 
-### Environment Configuration
-- `VITE_API_BASE_URL`: External API base URL (default: http://localhost:8000)
-- `VITE_API_KEY`: Optional Bearer token for API authentication
-- `VITE_API_TIMEOUT`: Request timeout in milliseconds
+### Documentation Updates (January 18, 2025)
+- **Comprehensive Documentation**: Created complete documentation suite for frontend-only architecture
+- **API Specification**: Added detailed API_SPEC.md with required endpoints and data formats
+- **Integration Examples**: Created API_EXAMPLES.md with Node.js, Python, and PHP examples
+- **Deployment Guide**: Added DEPLOYMENT.md with deployment instructions for multiple platforms
+- **Quick Start Guide**: Created QUICKSTART.md for rapid project setup
+- **Updated README**: Enhanced README.md with Russian language support and detailed setup instructions
+- **Environment Configuration**: Cleaned up .env.example with proper defaults
 
-The architecture now focuses on frontend excellence with seamless integration to any compatible REST API backend, maintaining type safety and developer experience while providing flexibility for different API implementations.
+## Quick Start
+
+### Prerequisites
+- Node.js 18+ installed
+- A compatible external API backend (see API Requirements below)
+
+### Installation and Setup
+
+1. **Clone and Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Configure Environment Variables**
+   Copy the example environment file and configure your API settings:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` with your API configuration:
+   ```
+   VITE_API_BASE_URL=http://your-api-server.com
+   VITE_API_KEY=your-api-key-here
+   VITE_API_TIMEOUT=30000
+   ```
+
+3. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+   
+   The application will be available at `http://localhost:5000`
+
+### Production Build
+
+1. **Build the Application**
+   ```bash
+   npm run build
+   ```
+
+2. **Preview Production Build**
+   ```bash
+   npm run preview
+   ```
+
+## API Requirements
+
+### Environment Configuration
+- `VITE_API_BASE_URL`: External API base URL (required)
+- `VITE_API_KEY`: Optional Bearer token for API authentication
+- `VITE_API_TIMEOUT`: Request timeout in milliseconds (default: 30000)
+
+### Required API Endpoints
+
+Your external API must implement the following endpoints:
+
+#### Birthday Management
+- `GET /api/birthdays` - Fetch all birthday records
+- `POST /api/birthdays` - Create a new birthday record
+- `PUT /api/birthdays/:id` - Update an existing birthday record
+- `DELETE /api/birthdays/:id` - Delete a birthday record
+- `GET /api/birthdays/stats` - Get birthday statistics
+
+#### Settings Management
+- `GET /api/reminder-settings` - Get reminder preferences
+- `PUT /api/reminder-settings` - Update reminder preferences
+- `GET /api/notification-settings` - Get notification service settings
+- `PUT /api/notification-settings` - Update notification service settings
+
+#### Health Check (Optional)
+- `GET /health` - API health check endpoint
+
+### API Response Format
+
+All endpoints should return JSON responses. The application handles both success and error responses:
+
+**Success Response:**
+```json
+{
+  "data": { /* response data */ },
+  "success": true,
+  "message": "Optional success message"
+}
+```
+
+**Error Response:**
+```json
+{
+  "message": "Error description",
+  "errors": [ /* validation errors if applicable */ ]
+}
+```
+
+### Authentication
+
+If your API requires authentication, set the `VITE_API_KEY` environment variable. The frontend will automatically include it as a Bearer token in all requests:
+
+```
+Authorization: Bearer your-api-key-here
+```
+
+### CORS Configuration
+
+Ensure your API backend is configured to accept requests from your frontend domain. For development, allow requests from `http://localhost:5000`.
+
+## Data Models
+
+The frontend expects the following data structures from your API:
+
+### Birthday Record
+```typescript
+interface Birthday {
+  id: number;
+  firstName: string;
+  lastName: string;
+  birthDate: string;      // Format: YYYY-MM-DD or --MM-DD
+  hasYear: boolean;
+  comment?: string;
+  createdAt?: string;
+}
+```
+
+### Birthday Statistics
+```typescript
+interface BirthdayStats {
+  totalRecords: number;
+  upcomingBirthdays: number;
+  recordsWithoutYear: number;
+  thisMonthBirthdays: number;
+}
+```
+
+### Reminder Settings
+```typescript
+interface ReminderSettings {
+  id: number;
+  oneWeekBefore: boolean;
+  threeDaysBefore: boolean;
+  oneDayBefore: boolean;
+  onBirthday: boolean;
+  oneMonthBefore: boolean;
+  timeOfDay: string;       // Format: HH:MM
+}
+```
+
+### Notification Settings
+```typescript
+interface NotificationSettings {
+  id: number;
+  service: string;         // "telegram", "email", "vk"
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  emailAddress?: string;
+  vkAccessToken?: string;
+  vkUserId?: string;
+}
+```
+
+## Deployment
+
+### Static Hosting
+After building the application, deploy the contents of the `dist` folder to any static hosting service:
+
+- **Vercel**: Connect your repository and deploy automatically
+- **Netlify**: Drag and drop the `dist` folder or connect via Git
+- **GitHub Pages**: Push the `dist` folder to your repository
+- **AWS S3**: Upload the `dist` folder to an S3 bucket with static hosting
+
+### Environment Variables in Production
+Set your production environment variables in your hosting platform:
+- `VITE_API_BASE_URL`: Your production API URL
+- `VITE_API_KEY`: Your production API key (if required)
+
+## Troubleshooting
+
+### Common Issues
+
+1. **API Connection Failed**
+   - Check that `VITE_API_BASE_URL` is correctly set
+   - Verify your API server is running and accessible
+   - Check CORS configuration on your API server
+
+2. **Authentication Errors**
+   - Verify `VITE_API_KEY` is correctly set
+   - Check that your API key is valid and has proper permissions
+
+3. **Build Errors**
+   - Ensure all environment variables are properly set
+   - Clear node_modules and reinstall dependencies: `rm -rf node_modules && npm install`
+
+### Development Tips
+
+- Use the browser's developer tools to inspect network requests
+- Check the API Status indicator in the application header
+- Monitor the console for error messages
+- Test API endpoints directly using tools like Postman or curl
+
+The architecture focuses on frontend excellence with seamless integration to any compatible REST API backend, maintaining type safety and developer experience while providing flexibility for different API implementations.
