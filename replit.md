@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack birthday management application built with React, Express, and PostgreSQL. The system allows users to manage birthday records, configure reminder settings, and set up notification services. It features a modern UI built with shadcn/ui components and Tailwind CSS, with a REST API backend using Express and Drizzle ORM for database operations.
+This is a frontend-only birthday management application built with React and TypeScript. The system allows users to manage birthday records, configure reminder settings, and set up notification services through an external API. It features a modern UI built with shadcn/ui components and Tailwind CSS, with full integration for external REST API backends.
 
 ## User Preferences
 
@@ -10,19 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Full-Stack Monorepo Structure
+### Frontend-Only Architecture
 - **Frontend**: React SPA with TypeScript, built with Vite
-- **Backend**: Express.js REST API with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **Shared**: Common schema and type definitions
-- **Build System**: Vite for frontend, esbuild for backend
+- **External API**: Configurable external REST API backend
+- **Shared**: Common schema and type definitions for API integration
+- **Build System**: Vite for frontend development and production builds
 
 ### Project Structure
 ```
-├── client/          # React frontend
-├── server/          # Express backend
+├── client/          # React frontend application
 ├── shared/          # Shared schemas and types
-├── migrations/      # Database migrations
+├── .env             # Environment variables for API configuration
 └── dist/           # Build output
 ```
 
@@ -37,35 +35,35 @@ Preferred communication style: Simple, everyday language.
 - **Forms**: React Hook Form with Zod validation
 - **Build Tool**: Vite with hot reload
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js
-- **Language**: TypeScript with ES modules
-- **Database**: PostgreSQL via Neon Database
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Validation**: Zod schemas for request validation
-- **Session**: In-memory storage (development mode)
+### External API Integration
+- **Configuration**: Environment variables for API base URL and authentication
+- **Authentication**: Bearer token support for secured API endpoints
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Connection Status**: Real-time API connection monitoring
+- **CORS Support**: Configurable for different API backend implementations
 
-### Database Schema
-Three main tables:
-- **birthdays**: Stores birthday records with optional year and comments
+### Expected API Schema
+The frontend expects these API endpoints:
+- **birthdays**: Birthday records with optional year and comments
 - **reminder_settings**: User preferences for reminder timing
 - **notification_settings**: Configuration for external services (Telegram, Email, VK)
+- **statistics**: Real-time birthday statistics and analytics
 
 ## Data Flow
 
 ### Birthday Management
 1. User creates birthday via form → validated with Zod
-2. POST /api/birthdays → server validates and stores
+2. POST request to external API → external server validates and stores
 3. TanStack Query invalidates cache → UI updates
-4. Statistics automatically recalculated
+4. Statistics automatically recalculated from external API
 
 ### Settings Configuration
 1. User modifies reminder/notification settings
-2. PUT requests to respective endpoints
+2. PUT requests to external API endpoints
 3. Real-time validation and form state management
 4. Optimistic updates with error handling
 
-### API Endpoints
+### Expected API Endpoints
 - `GET /api/birthdays` - Fetch all birthdays
 - `POST /api/birthdays` - Create birthday record
 - `PUT /api/birthdays/:id` - Update birthday record
@@ -73,6 +71,7 @@ Three main tables:
 - `GET /api/birthdays/stats` - Get statistics
 - `GET/PUT /api/reminder-settings` - Reminder configuration
 - `GET/PUT /api/notification-settings` - Notification services
+- `GET /health` - API health check (optional)
 
 ## External Dependencies
 
@@ -122,19 +121,24 @@ Three main tables:
 
 ## Recent Changes (January 2025)
 
-### Added Comments and Editing Features
-- **Comment Field**: Added optional comment field to birthday records for additional information
-- **Inline Editing**: Implemented direct table editing with save/cancel functionality
-- **Enhanced UI**: Added edit and save icons with proper color coding (blue for edit, green for save, red for delete)
-- **Form Validation**: Maintained Zod validation for all CRUD operations
-- **Improved UX**: Fixed React re-render issues in settings components using useEffect
+### Architecture Migration to Frontend-Only
+- **External API Support**: Migrated from full-stack to frontend-only architecture
+- **API Configuration**: Added environment variables for external API integration
+- **Connection Monitoring**: Implemented real-time API connection status with health checks
+- **Authentication**: Added Bearer token support for secured API endpoints
+- **Error Handling**: Enhanced error handling for external API integration
 
 ### Technical Improvements
-- Extended birthday schema with comment field
-- Added PUT endpoint for updating birthday records
-- Implemented inline editing with React Hook Form
-- Enhanced birthday table with edit/save/cancel actions
-- Updated storage interface with updateBirthday method
-- Fixed form reset loops in settings components
+- Removed internal Express backend and database dependencies
+- Added API configuration management with environment variables
+- Implemented API connection status monitoring component
+- Enhanced error handling for external API failures
+- Added support for configurable API base URLs and authentication
+- Maintained all existing UI components and functionality
 
-The architecture prioritizes developer experience with hot reloading, type safety, and rapid iteration while maintaining production-ready patterns for deployment.
+### Environment Configuration
+- `VITE_API_BASE_URL`: External API base URL (default: http://localhost:8000)
+- `VITE_API_KEY`: Optional Bearer token for API authentication
+- `VITE_API_TIMEOUT`: Request timeout in milliseconds
+
+The architecture now focuses on frontend excellence with seamless integration to any compatible REST API backend, maintaining type safety and developer experience while providing flexibility for different API implementations.

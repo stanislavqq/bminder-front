@@ -1,5 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// External API configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -12,9 +15,22 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fullUrl = `${API_BASE_URL}${url}`;
+  const headers: HeadersInit = {};
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  // Add API key if available
+  const apiKey = import.meta.env.VITE_API_KEY;
+  if (apiKey) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+
+  const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,8 +45,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = queryKey.join("/") as string;
+    const fullUrl = `${API_BASE_URL}${url}`;
+    
+    const headers: HeadersInit = {};
+    
+    // Add API key if available
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (apiKey) {
+      headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+
+    const res = await fetch(fullUrl, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

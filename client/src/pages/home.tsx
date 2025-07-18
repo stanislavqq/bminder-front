@@ -6,6 +6,7 @@ import BirthdayForm from "@/components/birthday-form";
 import BirthdayTable from "@/components/birthday-table";
 import ReminderSettings from "@/components/reminder-settings";
 import NotificationSettings from "@/components/notification-settings";
+import APIStatus from "@/components/api-status";
 
 export default function Home() {
   const currentDate = new Date().toLocaleDateString('ru-RU', {
@@ -35,6 +36,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <APIStatus />
         <Tabs defaultValue="birthdays" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="birthdays" className="flex items-center gap-2">
